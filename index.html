@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedLens AI Insight — Clinical Lab Digitizer</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --ink: #1c2a3a;
+      --muted: #5b6b7c;
+      --line: #dbe4ee;
+      --accent: #0f6e8c;
+      --accent-dark: #0b556c;
+      --accent-light: #e0f2fe;
+      --warn-bg: #fff4e5;
+      --warn-ink: #7a4a00;
+      --ok: #15803d;
+      --danger: #b91c1c;
+      --shadow-sm: 0 1px 3px rgba(20, 40, 60, 0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    .disclaimer {
+      background: var(--warn-bg);
+      color: var(--warn-ink);
+      font-weight: 700;
+      text-align: center;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 2px solid #f0c57a;
+      font-size: 0.88rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      min-height: calc(100vh - 48px);
+    }
+
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 1.5rem 1.25rem 2.5rem;
+    }
+
+    .main {
+      padding: 1.75rem 2.5rem 3rem;
+      max-width: 1120px;
+    }
+
+    h1, h2, h3 { margin: 0 0 0.75rem; color: var(--ink); }
+    h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; }
+    h2 { font-size: 1.18rem; color: var(--accent-dark); display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    h3 { font-size: 0.95rem; margin-top: 0.5rem; }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin: 0.85rem 0 0.35rem;
+      color: #334155;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 0.9rem;
+      background: #fbfdff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 110, 140, 0.15);
+    }
+
+    textarea { min-height: 72px; resize: vertical; }
+
+    .uploader {
+      border: 2px dashed #93c5fd;
+      border-radius: 12px;
+      padding: 1.5rem;
+      background: #f0f9ff;
+      margin: 1rem 0 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .uploader.dragover {
+      background: #e0f2fe;
+      border-color: var(--accent);
+      transform: scale(1.01);
+    }
+
+    .uploader-icon {
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .file-name {
+      margin-top: 0.6rem;
+      color: var(--ink);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .preview-box {
+      margin-top: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .preview-thumb {
+      max-height: 85px;
+      max-width: 140px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      object-fit: cover;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 1.25rem 0 1.5rem;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.68rem 1.25rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.92rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 4px rgba(15, 110, 140, 0.25);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-dark);
+      box-shadow: 0 4px 8px rgba(15, 110, 140, 0.35);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--accent-dark);
+      border: 1px solid #bae6fd;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #f0f9ff;
+      border-color: var(--accent);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background: #f1f5f9;
+      color: var(--ink);
+    }
+
+    button:disabled {
+      background: #94a3b8 !important;
+      color: #ffffff !important;
+      cursor: not-allowed;
+      border: 0;
+      box-shadow: none;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.22rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-user {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+
+    .badge-ai {
+      background: #f3e8ff;
+      color: #7e22ce;
+      border: 1px solid #e9d5ff;
+    }
+
+    .badge-demo {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .badge-status-ok {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-status-warn {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .badge-status-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .badge-status-neutral {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Grounding Callout */
+    .grounding-callout {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 0.85rem 1.1rem;
+      margin: 0.75rem 0 1rem;
+      border-radius: 6px;
+      font-size: 0.86rem;
+      color: #1e3a8a;
+      line-height: 1.5;
+    }
+
+    /* Stats Chips */
+    .chips-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .stat-chip {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.84rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-chip strong {
+      color: var(--ink);
+    }
+
+    /* Filter Pills */
+    .filters-row {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0 0.5rem;
+      align-items: center;
+    }
+
+    .filter-btn {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* Table */
+    .table-container {
+      background: var(--panel);
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+      margin-top: 0.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f1f7fa;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f4c64;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #f8fafc; }
+
+    .missing-range {
+      color: #94a3b8;
+      font-style: italic;
+      font-size: 0.84rem;
+    }
+
+    /* Summary Grid */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .summary-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .summary-card h3 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.65rem;
+      margin-top: 0;
+      font-size: 1.05rem;
+    }
+
+    .summary-content {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: #334155;
+    }
+
+    .summary-content p { margin: 0.4rem 0; }
+
+    /* Alert Banner */
+    .error-banner {
+      background: #fef2f2;
+      border: 1px solid #f87171;
+      color: #991b1b;
+      padding: 0.9rem 1.2rem;
+      border-radius: 8px;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .success-toast {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #166534;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+    }
+
+    .hidden { display: none !important; }
+
+    hr {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 2rem 0 1.25rem;
+    }
+
+    /* Print styling */
+    @media print {
+      .sidebar, .uploader, .actions, .disclaimer, .filters-row, #api-key { display: none !important; }
+      .layout { display: block; }
+      .main { padding: 0; max-width: 100%; }
+      .summary-grid { grid-template-columns: 1fr; }
+      body { background: white; color: black; }
+    }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+      .summary-grid { grid-template-columns: 1fr; }
+      .main { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="disclaimer">
+    DISCLAIMER: This tool is for clinical information organization and workflow digitization only. It does NOT provide medical diagnosis or treatment recommendations.
+  </div>
+
+  <div class="layout">
+    <!-- Sidebar: Patient Intake -->
+    <aside class="sidebar">
+      <h2>
+        Patient Intake
+        <span class="badge badge-user">User-Provided</span>
+      </h2>
+      <p style="font-size: 0.82rem; color: var(--muted); margin: 0 0 1rem;">
+        Data entered here originates directly from patient interview and intake.
+      </p>
+
+      <form id="intake-form">
+        <label for="name">Patient Full Name</label>
+        <input id="name" name="name" type="text" placeholder="e.g., Alex Johnson" autocomplete="name" />
+
+        <label for="age">Age</label>
+        <input id="age" name="age" type="number" min="0" max="120" placeholder="e.g., 42" />
+
+        <label for="sex">Sex</label>
+        <select id="sex" name="sex">
+          <option value="">Select sex...</option>
+          <option>Female</option>
+          <option>Male</option>
+          <option>Other</option>
+          <option>Prefer not to say</option>
+        </select>
+
+        <label for="symptoms">Reported Symptoms</label>
+        <textarea id="symptoms" name="symptoms" placeholder="Primary complaint, duration, onset..."></textarea>
+
+        <label for="allergies">Known Allergies</label>
+        <textarea id="allergies" name="allergies" placeholder="Medication, latex, or food allergies..."></textarea>
+
+        <hr />
+
+        <label for="api-key">Gemini API Key</label>
+        <input id="api-key" name="api-key" type="password" placeholder="AIzaSy... (optional if env set)" autocomplete="off" />
+        <small style="display:block; color:var(--muted); font-size:0.75rem; margin-top:0.35rem; line-height: 1.4;">
+          Kept in local browser memory only. Leave blank if <code>GEMINI_API_KEY</code> is set in the backend environment.
+        </small>
+
+        <div style="margin-top: 1.25rem;">
+          <button type="button" id="clear-intake" class="btn-ghost" style="width: 100%; justify-content: center; font-size: 0.85rem;">
+            Clear Intake Form
+          </button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main">
+      <h1>MedLens AI Insight</h1>
+      <div class="subtitle">
+        Intelligent Clinical Document Digitization with Strict Reference Range Grounding
+      </div>
+
+      <!-- File Uploader -->
+      <div class="uploader" id="drop-zone">
+        <div class="uploader-icon">📋</div>
+        <div style="font-weight: 700; color: var(--accent-dark); font-size: 1rem;">
+          Drop medical lab report here, or click to browse
+        </div>
+        <div style="font-size: 0.82rem; color: var(--muted); margin-top: 0.25rem;">
+          Supports PDF documents, JPG, PNG, and WebP (up to 20MB)
+        </div>
+        <input id="report" type="file" accept=".jpg,.jpeg,.png,.pdf,.webp,image/jpeg,image/png,application/pdf" class="hidden" />
+
+        <div id="file-name" class="file-name">No file selected.</div>
+
+        <div id="preview-container" class="preview-box hidden">
+          <img id="img-preview" class="preview-thumb hidden" alt="Lab report preview" />
+          <span id="file-size-badge" class="badge badge-status-neutral"></span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="actions">
+        <button type="button" id="process" class="btn-primary">
+          <span>🔍</span> Process Report with Gemini
+        </button>
+
+        <button type="button" id="load-demo" class="btn-secondary" title="Load sample lab findings without using API quota">
+          <span>⚡</span> Load Sample Lab Report (Demo)
+        </button>
+
+        <button type="button" id="reset-all" class="btn-ghost" title="Reset everything to starting state">
+          Reset All
+        </button>
+      </div>
+
+      <!-- Feedback / Error Banner -->
+      <div id="error-box" class="error-banner hidden" role="alert"></div>
+      <div id="success-box" class="success-toast hidden" role="status"></div>
+
+      <!-- Extracted Results Table Section -->
+      <section id="results" class="hidden" style="margin-top: 1.75rem;">
+        <h2>
+          Extracted Lab Results
+          <span class="badge badge-ai" id="results-source-badge">AI-Extracted</span>
+        </h2>
+
+        <div class="grounding-callout">
+          <strong>Strict Document Grounding Enforced:</strong>
+          The AI extraction model is instructed to capture reference ranges <em>only</em> if they are explicitly printed in the physical document. If a test has no printed reference range, it is marked as <em>Not stated in report</em> and is never invented or assumed from general clinical knowledge.
+        </div>
+
+        <!-- Document Metadata -->
+        <div id="doc-meta" style="margin: 0.6rem 0; font-size: 0.88rem; color: var(--muted);"></div>
+
+        <!-- Statistics Chips -->
+        <div class="chips-row" id="stats-row"></div>
+
+        <!-- Table Filters -->
+        <div class="filters-row">
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--muted);">Filter:</span>
+          <button type="button" class="filter-btn active" data-filter="all">All Tests</button>
+          <button type="button" class="filter-btn" data-filter="flagged">Out of Range / Flagged</button>
+          <button type="button" class="filter-btn" data-filter="normal">Within Range</button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 120px;">Source</th>
+                <th>Diagnostic Test Name</th>
+                <th>Observed Value</th>
+                <th>Document Reference Range</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <hr />
+
+      <!-- Clinical Summary Section -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <h2 style="margin: 0;">Organized Clinical Overview</h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" id="copy-summary" class="btn-ghost" style="font-size: 0.84rem;">
+            📋 Copy Overview
+          </button>
+          <button type="button" id="print-view" class="btn-ghost" style="font-size: 0.84rem;">
+            🖨️ Print / PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <!-- Patient Intake Card -->
+        <div class="summary-card">
+          <h3>
+            Patient Intake Data
+            <span class="badge badge-user">User-Provided</span>
+          </h3>
+          <div id="user-intake-summary" class="summary-content">
+            Enter patient details in the sidebar to review intake data.
+          </div>
+        </div>
+
+        <!-- Laboratory Findings Card -->
+        <div class="summary-card">
+          <h3>
+            Laboratory Findings
+            <span class="badge badge-ai" id="summary-source-badge">AI-Extracted</span>
+          </h3>
+          <div id="ai-lab-summary" class="summary-content">
+            Upload and process a lab report or click "Load Sample Lab Report" to view digitized test results and document-grounded ranges.
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("report");
+    const fileName = document.getElementById("file-name");
+    const previewContainer = document.getElementById("preview-container");
+    const imgPreview = document.getElementById("img-preview");
+    const fileSizeBadge = document.getElementById("file-size-badge");
+
+    const processBtn = document.getElementById("process");
+    const demoBtn = document.getElementById("load-demo");
+    const resetBtn = document.getElementById("reset-all");
+    const clearIntakeBtn = document.getElementById("clear-intake");
+    const copySummaryBtn = document.getElementById("copy-summary");
+    const printBtn = document.getElementById("print-view");
+
+    const results = document.getElementById("results");
+    const resultsTbody = document.getElementById("results-tbody");
+    const docMeta = document.getElementById("doc-meta");
+    const statsRow = document.getElementById("stats-row");
+    const errorBox = document.getElementById("error-box");
+    const successBox = document.getElementById("success-box");
+    const userIntakeSummary = document.getElementById("user-intake-summary");
+    const aiLabSummary = document.getElementById("ai-lab-summary");
+    const filterBtns = document.querySelectorAll(".filter-btn");
+
+    let currentExtractionData = null;
+    let selectedFile = null;
+    let activeFilter = "all";
+
+    // Drag and Drop Handlers
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files && fileInput.files[0]) {
+        handleFileSelect(fileInput.files[0]);
+      }
+    });
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return "0 Bytes";
+      const k = 1024;
+      const sizes = ["Bytes", "KB", "MB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+    }
+
+    function handleFileSelect(file) {
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileSizeBadge.textContent = `${formatBytes(file.size)} • ${file.type || "Document"}`;
+      previewContainer.classList.remove("hidden");
+
+      if (file.type.startsWith("image/")) {
+        const url = URL.createObjectURL(file);
+        imgPreview.src = url;
+        imgPreview.classList.remove("hidden");
+      } else {
+        imgPreview.classList.add("hidden");
+      }
+      hideError();
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove("hidden");
+      successBox.classList.add("hidden");
+    }
+
+    function hideError() {
+      errorBox.textContent = "";
+      errorBox.classList.add("hidden");
+    }
+
+    function showToast(msg) {
+      successBox.textContent = msg;
+      successBox.classList.remove("hidden");
+      setTimeout(() => successBox.classList.add("hidden"), 4000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function getStatusBadge(status) {
+      if (!status || status === "Not Stated" || status === "Unknown") {
+        return `<span class="badge badge-status-neutral">Not Stated</span>`;
+      }
+      const lower = status.toLowerCase();
+      if (lower.includes("within") || lower.includes("normal") || lower.includes("ok")) {
+        return `<span class="badge badge-status-ok">${escapeHtml(status)}</span>`;
+      }
+      if (lower.includes("high") || lower.includes("low") || lower.includes("borderline")) {
+        return `<span class="badge badge-status-warn">${escapeHtml(status)}</span>`;
+      }
+      return `<span class="badge badge-status-danger">${escapeHtml(status)}</span>`;
+    }
+
+    // Process Live Report
+    processBtn.addEventListener("click", async () => {
+      hideError();
+
+      if (!selectedFile) {
+        showError("Please select or drop a lab report (PDF, JPG, or PNG) to process.");
+        return;
+      }
+
+      const apiKey = document.getElementById("api-key").value.trim();
+      const userIntake = {
+        name: document.getElementById("name").value.trim(),
+        age: document.getElementById("age").value.trim(),
+        sex: document.getElementById("sex").value.trim(),
+        symptoms: document.getElementById("symptoms").value.trim(),
+        allergies: document.getElementById("allergies").value.trim(),
+      };
+
+      processBtn.disabled = true;
+      demoBtn.disabled = true;
+      processBtn.innerHTML = "<span>⏳</span> Analyzing Document with Gemini...";
+
+      try {
+        // Read file as Base64
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(selectedFile);
+        const fileBase64 = await base64Promise;
+
+        const mimeType = selectedFile.type || (
+          selectedFile.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg"
+        );
+
+        const payload = {
+          file_base64: fileBase64,
+          mime_type: mimeType,
+          api_key: apiKey || null,
+          user_intake: userIntake,
+          is_demo: false
+        };
+
+        const response = await fetch("/api/process-report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to process report.");
+        }
+
+        currentExtractionData = data;
+        renderResults(data);
+        showToast("✓ Lab report successfully digitized and grounded!");
+
+      } catch (err) {
+        showError(err.message || "An unexpected error occurred during extraction.");
+      } finally {
+        processBtn.disabled = false;
+        demoBtn.disabled = false;
+        processBtn.innerHTML = "<span>🔍</span> Process Report with Gemini";
+      }
+    });
+
+    // Load Demo Report
+    demoBtn.addEventListener("click", async () => {
+      hideError();
+      demoBtn.disabled = true;
+      processBtn.disabled = true;
+      demoBtn.innerHTML = "<span>⏳</span> Loading Demo...";
+
+      try {
+        // Pre-fill demo intake fields if empty
+        if (!document.getElementById("name").value) document.getElementById("name").value = "Eleanor Vance";
+        if (!document.getElementById("age").value) document.getElementById("age").value = "46";
+        if (!document.getElementById("sex").value) document.getElementById("sex").value = "Female";
+        if (!document.getElementById("symptoms").value) {
+          document.getElementById("symptoms").value = "Fatigue, mild exertion dyspnea, and dizziness for 3 weeks.";
+        }
+        if (!document.getElementById("allergies").value) {
+          document.getElementById("allergies").value = "Penicillin (rash)";
+        }
+
+        const userIntake = {
+          name: document.getElementById("name").value,
+          age: document.getElementById("age").value,
+          sex: document.getElementById("sex").value,
+          symptoms: document.getElementById("symptoms").value,
+          allergies: document.getElementById("allergies").value,
+        };
+
+        const STATIC_DEMO = {
+          success: true,
+          is_demo: true,
+          user_provided: {
+            source: "User-Provided",
+            name: userIntake.name || "Eleanor Vance (Demo Patient)",
+            age: userIntake.age || "46",
+            sex: userIntake.sex || "Female",
+            symptoms: userIntake.symptoms || "Fatigue, mild exertion dyspnea, and dizziness for 3 weeks.",
+            allergies: userIntake.allergies || "Penicillin (rash)",
+          },
+          ai_extracted: {
+            data_source: "AI-Extracted",
+            patient_name_in_document: "Eleanor Vance",
+            collection_or_report_date: "2026-08-14",
+            facility_or_lab_name: "MetroHealth Clinical Laboratories",
+            tests: [
+              {
+                data_source: "AI-Extracted",
+                test_name: "Hemoglobin",
+                value: "11.2",
+                unit: "g/dL",
+                reference_range: "12.0 - 15.5 g/dL",
+                status: "Low",
+              },
+              {
+                data_source: "AI-Extracted",
+                test_name: "Hematocrit",
+                value: "34.1",
+                unit: "%",
+                reference_range: "37.0 - 48.0 %",
+                status: "Low",
+              },
+              {
+                data_source: "AI-Extracted",
+                test_name: "WBC Count",
+                value: "6.8",
+                unit: "x10^3/uL",
+                reference_range: "4.5 - 11.0 x10^3/uL",
+                status: "Within Range",
+              },
+              {
+                data_source: "AI-Extracted",
+                test_name: "Platelets",
+                value: "245",
+                unit: "x10^3/uL",
+                reference_range: "150 - 450 x10^3/uL",
+                status: "Within Range",
+              },
+              {
+                data_source: "AI-Extracted",
+                test_name: "Serum Ferritin",
+                value: "14",
+                unit: "ng/mL",
+                reference_range: null,
+                status: "Not Stated",
+              },
+              {
+                data_source: "AI-Extracted",
+                test_name: "Fasting Glucose",
+                value: "108",
+                unit: "mg/dL",
+                reference_range: "70 - 99 mg/dL",
+                status: "High",
+              },
+            ],
+            notes_and_impressions: (
+              "Specimen hemolyzed: None. " +
+              "Automated differential complete. Mild microcytic picture noted on blood smear."
+            ),
+            extraction_warnings: [
+              "No reference range was printed in the report for Serum Ferritin; " +
+              "marked as 'Not Stated' per MedLens strict document-grounding policy."
+            ],
+          }
+        };
+
+        let data = null;
+
+        if (window.location.protocol === "file:") {
+          // Direct file opening: use offline payload directly
+          data = STATIC_DEMO;
+        } else {
+          try {
+            const response = await fetch("/api/process-report", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ is_demo: true, user_intake: userIntake }),
+            });
+            data = await response.json();
+          } catch (netErr) {
+            // Fallback to static demo if network/server is unreachable
+            data = STATIC_DEMO;
+          }
+        }
+
+        if (!data || !data.success) {
+          throw new Error((data && data.error) || "Failed to load demo report.");
+        }
+
+        currentExtractionData = data;
+        renderResults(data);
+        showToast("✓ Loaded sample lab report (Demonstrating 'AI-Extracted' & document grounding)");
+
+      } catch (err) {
+        showError(err.message || "Could not load demo report.");
+      } finally {
+        demoBtn.disabled = false;
+        processBtn.disabled = false;
+        demoBtn.innerHTML = "<span>⚡</span> Load Sample Lab Report (Demo)";
+      }
+    });
+
+    // Filter Buttons
+    filterBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        filterBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        if (currentExtractionData) {
+          filterAndRenderTable(currentExtractionData.ai_extracted.tests || []);
+        }
+      });
+    });
+
+    function filterAndRenderTable(tests) {
+      resultsTbody.innerHTML = "";
+
+      const filtered = tests.filter(test => {
+        const s = (test.status || "").toLowerCase();
+        if (activeFilter === "flagged") {
+          return s.includes("high") || s.includes("low") || s.includes("abnormal");
+        }
+        if (activeFilter === "normal") {
+          return s.includes("within") || s.includes("normal") || s.includes("ok");
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        resultsTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 1.5rem;">No tests match the current filter.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(test => {
+        const row = document.createElement("tr");
+
+        const refRangeDisplay = test.reference_range
+          ? `<strong>${escapeHtml(test.reference_range)}</strong>`
+          : `<span class="missing-range">Not stated in report (Not invented)</span>`;
+
+        const unitDisplay = test.unit ? ` <span style="color:var(--muted); font-size:0.82rem;">${escapeHtml(test.unit)}</span>` : "";
+
+        row.innerHTML = `
+          <td><span class="badge badge-ai">${escapeHtml(test.data_source || 'AI-Extracted')}</span></td>
+          <td><strong>${escapeHtml(test.test_name)}</strong></td>
+          <td>${escapeHtml(test.value)}${unitDisplay}</td>
+          <td>${refRangeDisplay}</td>
+          <td>${getStatusBadge(test.status)}</td>
+        `;
+        resultsTbody.appendChild(row);
+      });
+    }
+
+    function renderResults(data) {
+      const { user_provided, ai_extracted } = data;
+      const tests = ai_extracted.tests || [];
+
+      // 1. Render Table
+      filterAndRenderTable(tests);
+
+      // 2. Metadata string
+      const metaParts = [];
+      if (ai_extracted.facility_or_lab_name) {
+        metaParts.push(`<strong>Facility:</strong> ${escapeHtml(ai_extracted.facility_or_lab_name)}`);
+      }
+      if (ai_extracted.collection_or_report_date) {
+        metaParts.push(`<strong>Report Date:</strong> ${escapeHtml(ai_extracted.collection_or_report_date)}`);
+      }
+      if (ai_extracted.patient_name_in_document) {
+        metaParts.push(`<strong>Name on Report:</strong> ${escapeHtml(ai_extracted.patient_name_in_document)}`);
+      }
+      docMeta.innerHTML = metaParts.length > 0 ? metaParts.join(" &nbsp;•&nbsp; ") : "";
+
+      // 3. Stats Chips
+      const abnormalCount = tests.filter(t => {
+        const s = (t.status || "").toLowerCase();
+        return s.includes("high") || s.includes("low") || s.includes("abnormal");
+      }).length;
+
+      const normalCount = tests.filter(t => {
+        const s = (t.status || "").toLowerCase();
+        return s.includes("within") || s.includes("normal") || s.includes("ok");
+      }).length;
+
+      const unstatedCount = tests.filter(t => !t.reference_range).length;
+
+      statsRow.innerHTML = `
+        <div class="stat-chip"><strong>${tests.length}</strong> Total Tests</div>
+        <div class="stat-chip" style="color: var(--danger);"><strong>${abnormalCount}</strong> Out of Range</div>
+        <div class="stat-chip" style="color: var(--ok);"><strong>${normalCount}</strong> Within Range</div>
+        <div class="stat-chip" style="color: #64748b;" title="Tests where no reference interval was printed on the document">
+          <strong>${unstatedCount}</strong> Unstated Intervals (Grounding enforced)
+        </div>
+      `;
+
+      results.classList.remove("hidden");
+
+      // 4. Populate User-Provided Intake Summary Card
+      userIntakeSummary.innerHTML = `
+        <p><strong>Patient Name:</strong> ${escapeHtml(user_provided.name)}</p>
+        <p><strong>Age / Sex:</strong> ${escapeHtml(user_provided.age)} / ${escapeHtml(user_provided.sex)}</p>
+        <p><strong>Reported Symptoms:</strong> ${escapeHtml(user_provided.symptoms)}</p>
+        <p><strong>Allergies:</strong> ${escapeHtml(user_provided.allergies)}</p>
+        <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed var(--line); font-size: 0.76rem; color: var(--muted);">
+          Data Provenance: User Intake Form
+        </div>
+      `;
+
+      // 5. Populate AI-Extracted Lab Findings Card
+      let notesHtml = "";
+      if (ai_extracted.notes_and_impressions) {
+        notesHtml = `<p><strong>Clinical Notes on Document:</strong> ${escapeHtml(ai_extracted.notes_and_impressions)}</p>`;
+      }
+
+      let warningsHtml = "";
+      if (ai_extracted.extraction_warnings && ai_extracted.extraction_warnings.length > 0) {
+        warningsHtml = `<div style="margin-top: 0.5rem; color: #b45309; font-size: 0.82rem;"><strong>Extraction notice:</strong> ${escapeHtml(ai_extracted.extraction_warnings.join("; "))}</div>`;
+      }
+
+      aiLabSummary.innerHTML = `
+        <p><strong>Digitized Tests:</strong> ${tests.length} diagnostic values captured.</p>
+        <p><strong>Flagged Findings:</strong> ${abnormalCount} value(s) out of reference range.</p>
+        <p><strong>Grounding Policy:</strong> ${unstatedCount} test(s) lacked printed document reference ranges and were correctly preserved without fabrication.</p>
+        ${notesHtml}
+        ${warningsHtml}
+        <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed var(--line); font-size: 0.76rem; color: var(--muted);">
+          Data Provenance: AI Document Extraction
+        </div>
+      `;
+    }
+
+    // Reset All
+    resetBtn.addEventListener("click", () => {
+      document.getElementById("intake-form").reset();
+      fileInput.value = "";
+      selectedFile = null;
+      fileName.textContent = "No file selected.";
+      previewContainer.classList.add("hidden");
+      results.classList.add("hidden");
+      resultsTbody.innerHTML = "";
+      statsRow.innerHTML = "";
+      docMeta.innerHTML = "";
+      hideError();
+      currentExtractionData = null;
+      userIntakeSummary.textContent = "Enter patient details in the sidebar to review intake data.";
+      aiLabSummary.textContent = "Upload and process a lab report or click 'Load Sample Lab Report' to view digitized test results.";
+      showToast("Reset all fields and results.");
+    });
+
+    // Clear Intake Form only
+    clearIntakeBtn.addEventListener("click", () => {
+      document.getElementById("name").value = "";
+      document.getElementById("age").value = "";
+      document.getElementById("sex").value = "";
+      document.getElementById("symptoms").value = "";
+      document.getElementById("allergies").value = "";
+    });
+
+    // Copy Summary to Clipboard
+    copySummaryBtn.addEventListener("click", () => {
+      if (!currentExtractionData) {
+        showError("Please extract or load a report first before copying.");
+        return;
+      }
+      const user = currentExtractionData.user_provided;
+      const ai = currentExtractionData.ai_extracted;
+      const tests = ai.tests || [];
+
+      let text = `=== MEDLENS AI INSIGHT CLINICAL OVERVIEW ===\n\n`;
+      text += `[USER-PROVIDED PATIENT INTAKE]\n`;
+      text += `Name: ${user.name}\nAge: ${user.age} | Sex: ${user.sex}\nSymptoms: ${user.symptoms}\nAllergies: ${user.allergies}\n\n`;
+      text += `[AI-EXTRACTED LAB FINDINGS]\n`;
+      if (ai.facility_or_lab_name) text += `Facility: ${ai.facility_or_lab_name}\n`;
+      if (ai.collection_or_report_date) text += `Report Date: ${ai.collection_or_report_date}\n\n`;
+      text += `TEST RESULTS (${tests.length} tests):\n`;
+      tests.forEach(t => {
+        text += `- [AI-Extracted] ${t.test_name}: ${t.value} ${t.unit || ''} | Ref: ${t.reference_range || 'Not stated in report'} | Status: ${t.status || 'Not Stated'}\n`;
+      });
+      if (ai.notes_and_impressions) text += `\nDocument Notes: ${ai.notes_and_impressions}\n`;
+      text += `\n*Strict Grounding Notice: Reference ranges reflect only document text and are never fabricated.*`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("✓ Clinical overview copied to clipboard!");
+      }).catch(() => {
+        showError("Failed to copy to clipboard.");
+      });
+    });
+
+    // Print / PDF View
+    printBtn.addEventListener("click", () => {
+      window.print();
+    });
+  </script>
+</body>
+</html>
